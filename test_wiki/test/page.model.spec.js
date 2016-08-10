@@ -3,6 +3,7 @@ var models = require('../models');
 var Page = models.Page;
 var chai = require('chai');
 var expect = chai.expect;
+var assert = chai.assert;
 var spies = require('chai-spies');
 chai.should();
 chai.use(spies);
@@ -132,13 +133,17 @@ describe('Page model', function () {
     describe('findSimilar', function () {
       var testPage;
       var similars;
-      // var page1, page2, page3;
-      // var objGroup = {
-      //   obj1: {title: 'foo', content: 'bar', tags: ['foo', 'bar']},
-      //   obj2: {title: 'baby', content: 'bart', tags: ['bar', 'foot']},
-      //   obj3: {title: 'dan', content: 'mandel', tags: ['full', 'stack']}
-      // }
+      var page1, page2, page3;
+      var allPages;
+      var objGroup = {
+        obj1: {title: 'foo', content: 'bar', tags: ['foo', 'bar']},
+        obj2: {title: 'baby', content: 'bart', tags: ['bar', 'foot']},
+        obj3: {title: 'dan', content: 'mandel', tags: ['full', 'stack']}
+      }
 
+      // page1 = Page.create(objGroup['obj1']);
+      // page2 = Page.create(objGroup['obj2']);
+      // page3 = Page.create(objGroup['obj3']);
 
       beforeEach('Sync tables', function(done){
         Page.sync({force:true})
@@ -148,39 +153,18 @@ describe('Page model', function () {
         .catch(done);
       });
 
-      beforeEach('make 3 pages', function(done){
-        Page.bulkCreate([
-          {title: 'foo', content: 'bar', tags: ['foo', 'bar']},
-          {title: 'baby', content: 'bart', tags: ['bar', 'foot']},
-          {title: 'dan', content: 'mandel', tags: ['full', 'stack']}])
-            .then(function(){
-              console.log("We're done");
-              done();
-            })
-            .catch(done);
-      })
+      beforeEach('makes 3 pages', function(done){
 
-      // beforeEach('Creates Page 1', function (done){
-      //   Page.create(objGroup['obj1'])
-      //     .then(function(){
-      //       done();
-      //     })
-      //     .catch(done);
-      // })
-      // beforeEach('Creates Page 2', function (done){
-      //   Page.create(objGroup['obj2'])
-      //     .then(function(){
-      //       done();
-      //     })
-      //     .catch(done);
-      // })
-      // beforeEach('Creates Page 3', function (done){
-      //   Page.create(objGroup['obj3'])
-      //     .then(function(){
-      //       done();
-      //     })
-      //     .catch(done);
-      // })
+
+
+        Promise.all([Page.create(objGroup['obj1']), Page.create(objGroup['obj2']), Page.create(objGroup['obj3'])])
+          .then(function(contents){
+
+            allPages = contents;
+            done();
+          })
+          .catch(done);
+      })
 
       beforeEach(function (done){
         Page.findOne({
@@ -195,13 +179,7 @@ describe('Page model', function () {
           .catch(done);
       })
 
-      // beforeEach(function (done){
-      //   testPage.findSimilar()
-      //     .then(function(similarPages){
-      //       similars = similarPages
-      //       done();
-      //     })
-      // })
+
 
       it('never gets itself', function(done){
           testPage.findSimilar()
@@ -213,10 +191,19 @@ describe('Page model', function () {
       it('gets other pages with any common tags', function(done){
         testPage.findSimilar()
           .then(function(similarPages){
-            similarPages.should.include
+
+            expect(similarPages[0].title).to.equal(allPages[1].title);
+            done();
           })
       });
-      it('does not get other pages without any common tags');
+      it('does not get other pages without any common tags', function(done){
+        testPage.findSimilar()
+          .then(function(similarPages){
+            expect(similarPages[0].title).to.not.equal(allPages[0].title);
+            expect(similarPages[0].title).to.not.equal(allPages[2].title);
+            done();
+          })
+      });
     });
   });
 
